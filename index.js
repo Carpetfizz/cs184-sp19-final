@@ -20,6 +20,36 @@ const ROLL_KEY = "Roll(rads)"
 const PITCH_KEY = "Pitch(rads)"
 const YAW_KEY = "Yaw(rads)"
 
+function reset(params) {
+    params.t = 0;
+    params.start = Date.now();
+}
+
+const Params = function() {
+    // THIS CHANGES THE ANGLE OF ROTATION... 
+    this.dampening = 0.1;
+    this.duration = 3;
+    this.isPlay = true;
+    this.t = 0;
+    this.start = Date.now();
+    this.reset = () => reset(this);
+    this.isPlay = false;
+    this.birdCam = true;
+}
+
+const gui = new dat.GUI();
+const params = new Params();
+
+const damp_ctrl = gui.add(params, 'dampening', 0, 1);
+const dur_ctrl = gui.add(params, 'duration');
+gui.add(params, 'reset');
+gui.add(params, 'birdCam');
+
+damp_ctrl.onChange((v) => reset(params));
+dur_ctrl.onChange((v) => reset(params));
+
+
+
 function lerp(v0, v1, t) {
     return (1 - t) * v0 + t * v1;
 }
@@ -100,11 +130,27 @@ function setupCurve(scene, positions) {
 
 function init(motion, sceneData) {
     const scene = setupScene(sceneData);
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    
+    const birdCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
+    birdCam.position.set(-10, 10, 1);
+    birdCam.lookAt(new THREE.Vector3(0, 0, 0));
+    
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    const camBallGeo = new THREE.SphereGeometry(0.3, 30, 30);
+    const camBallMat = new THREE.MeshBasicMaterial({color: 0xffff00});
+    const camBall = new THREE.Mesh(camBallGeo, camBallMat);
+    camBall.position.copy(camera.position);
+    scene.add(camBall);
+
+    const cameraHelper = new THREE.CameraHelper( camera );
+    scene.add( cameraHelper );
+    
     const points  = [
         new THREE.Vector3(0, 0.01, 30),
+        new THREE.Vector3(-1, 3, 25),
         new THREE.Vector3(0, 5, 20),
-        new THREE.Vector3( 0, 0.5, 1)
+        new THREE.Vector3( 0, 0.5, 1),
+        new THREE.Vector3(-10, 0.3, -3)
     ]
     const curve = setupCurve(scene, points);
 
@@ -116,45 +162,54 @@ function init(motion, sceneData) {
     pitches = getValues(motion, PITCH_KEY);
     yaws = getValues(motion, YAW_KEY);
 
-    let t = 0;
-    let damping = 0.1;
-
-    let duration =  6 * 1000; // ms
-    let start = Date.now();
+    const controls = new THREE.OrbitControls( birdCam , renderer.domElement);
+    controls.update();
 
     function animate() {
         requestAnimationFrame( animate );
+        controls.update();
         let roll, pitch, yaw;
-        let f = (Date.now() - start) / duration;
-
+        let duration =  params.duration * 1000; // ms
+        const f = (Date.now() - params.start) / duration;
         // add some linear interpolation ?
         if (f <= 1) {
-            let pos = curve.getPointAt(f);
+            const pos = curve.getPointAt(f);
             camera.position.copy(pos);
-        }
+            const tangent = curve.getTangent(f).normalize();
+            camera.lookAt(pos.add(tangent));
+            camBall.position.set(camera.position.x, camera.position.y, camera.position.z);
 
-        const j = t % 5;
+            const j = params.t % 5;
 
-        if (j == 0) {
-            roll = rolls[t];
-            pitch = pitches[t];
-            yaw = yaws[t];
+            if (j == 0) {
+                roll = rolls[params.t];
+                pitch = pitches[params.t];
+                yaw = yaws[params.t];
+            } else {
+                const s = (j/6 - (j-1)/5) / (1/5);
+                roll = lerp(rolls[params.t-1], rolls[params.t], s);
+                pitch = lerp(pitches[params.t-1], pitches[params.t], s);
+                yaw = lerp(yaws[params.t-1], yaws[params.t], s);
+            }
+
+            if (params.t < rolls.length) {
+                camera.rotation.x += pitch * params.dampening;
+                camera.rotation.y += roll * params.dampening;
+                camera.rotation.z += yaw * params.dampening;
+            } else {
+                params.t = 0;
+            }
+            params.t += 1;
+
         } else {
-            const s = (j/6 - (j-1)/5) / (1/5);
-            roll = lerp(rolls[t-1], rolls[t], s);
-            pitch = lerp(pitches[t-1], pitches[t], s);
-            yaw = lerp(yaws[t-1], yaws[t], s);
+            reset(params);
         }
 
-        if (t < rolls.length) {
-            camera.rotation.x = pitch * damping;
-            camera.rotation.y = roll * damping;
-            camera.rotation.z = yaw * damping;
+        if (params.birdCam) {
+            renderer.render(scene, birdCam);
         } else {
-            t = 0;
+            renderer.render(scene, camera);
         }
-        renderer.render( scene, camera );
-        t += 1;
     }
     animate();
 }
