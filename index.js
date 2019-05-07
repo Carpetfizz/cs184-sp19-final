@@ -39,7 +39,7 @@ function setupScene(sceneData) {
     
     // OBJECT
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material );
     cube.position.y = 0.5;
     scene.add(cube);
@@ -75,7 +75,12 @@ function setupScene(sceneData) {
 	// 		side: THREE.BackSide
 	// 	}));
 	// var skybox = new THREE.Mesh(skyGeo, skyMats);
-	// scene.add( skybox );
+    // scene.add( skybox );
+    
+    // LIGHTING
+
+    var light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
+    scene.add( light );
 
     return scene;
 }
