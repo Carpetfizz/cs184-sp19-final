@@ -90,7 +90,7 @@ function setupScene(scene) {
 
     //return scene;
 }
-
+ 
 function setupCurve(scene, positions) {
     var curve = new THREE.CatmullRomCurve3(positions);
 
