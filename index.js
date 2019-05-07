@@ -4,7 +4,7 @@ fetch('data/motion.json')
     return response.json();
 })
 .then((motion) => {
-    fetch('data/scene.json')
+    fetch('data/scene_shapes.json')
     .then((response) => {
         return response.json();
     })
@@ -32,57 +32,63 @@ function getValues(dict, k) {
     return values;
 }
 
-function setupScene(sceneData) {
+function setupScene(scene) {
+    //Load scene from json
+    var loader = new THREE.ObjectLoader();
+    loader.load('data/scene_shapes.json', function( shapes ) {
+        scene.add(shapes);
+    } );
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
-    
+    //const scene = new THREE.Scene(sceneData);
+    // scene.background = new THREE.Color(0x87ceeb);
+
     // OBJECT
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material );
-    cube.position.y = 0.5;
-    scene.add(cube);
-    
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+    // const cube = new THREE.Mesh(geometry, material );
+    // cube.position.y = 0.5;
+    // scene.add(cube);
+
     // GROUND
-    const groundGeo = new THREE.PlaneGeometry(400,400);
-    const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
-    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.offset.set( 0, 0 );
-    groundTexture.repeat.set(20, 20);
-    const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
-    const ground = new THREE.Mesh(groundGeo,groundMat); 
-    ground.position.y = 0; //lower it 
-    ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
-    ground.doubleSided = true; 
-    scene.add(ground);
+    // const groundGeo = new THREE.PlaneGeometry(400,400);
+    // const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
+    // groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    // groundTexture.offset.set( 0, 0 );
+    // groundTexture.repeat.set(20, 20);
+    // const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
+    // const ground = new THREE.Mesh(groundGeo,groundMat);
+    // ground.position.y = 0; //lower it
+    // ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis
+    // ground.doubleSided = true;
+    // scene.add(ground);
 
     // SKYBOX
-    // const skyGeo = new THREE.CubeGeometry(1000, 1000, 1000, 1, 1, 1, null, true);
-    // const urls = [
-    //     'skybox/hills_rt.png',
-    //     'skybox/hills_lf.png',
-    //     'skybox/hills_up.png',
-    //     'skybox/hills_dn.png',
-    //     'skybox/hills_bk.png',
-    //     'skybox/hills_ft.png'
-    // ]
-	
-	// var skyMats = [];
-	// for (var i = 0; i < 6; i++)
-	// 	skyMats.push( new THREE.MeshBasicMaterial({
-	// 		map: new THREE.TextureLoader().load(urls[i]),
-	// 		side: THREE.BackSide
-	// 	}));
-	// var skybox = new THREE.Mesh(skyGeo, skyMats);
-    // scene.add( skybox );
-    
+    const skyGeo = new THREE.CubeGeometry(1000, 1000, 1000, 1, 1, 1, null, true);
+    const urls = [
+        'skybox/hills_rt.png',
+        'skybox/hills_lf.png',
+        'skybox/hills_up.png',
+        'skybox/hills_dn.png',
+        'skybox/hills_bk.png',
+        'skybox/hills_ft.png'
+    ]
+
+	var skyMats = [];
+	for (var i = 0; i < 6; i++)
+		skyMats.push( new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load(urls[i]),
+			side: THREE.BackSide
+		}));
+	var skybox = new THREE.Mesh(skyGeo, skyMats);
+    scene.add( skybox );
+
     // LIGHTING
 
-    var light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
-    scene.add( light );
+    // var light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
+    // scene.add( light );
 
-    return scene;
+
+    //return scene;
 }
 
 function setupCurve(scene, positions) {
@@ -91,7 +97,7 @@ function setupCurve(scene, positions) {
     const points = curve.getPoints( 50 );
     const curveGeo = new THREE.BufferGeometry().setFromPoints( points );
     const curveMat = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-    
+
     // Create the final object to add to the scene
     const curveObject = new THREE.Line( curveGeo, curveMat );
     scene.add(curveObject);
@@ -99,7 +105,8 @@ function setupCurve(scene, positions) {
 }
 
 function init(motion, sceneData) {
-    const scene = setupScene(sceneData);
+    const scene = new THREE.Scene();
+    setupScene(scene);
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     const points  = [
         new THREE.Vector3(0, 0.01, 30),
@@ -107,6 +114,10 @@ function init(motion, sceneData) {
         new THREE.Vector3( 0, 0.5, 1)
     ]
     const curve = setupCurve(scene, points);
+
+    //Add ambient light
+    var ambientLight = new THREE.AmbientLight(0x555555);
+    scene.add(ambientLight);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
