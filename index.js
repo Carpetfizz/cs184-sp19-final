@@ -1,19 +1,39 @@
 
-fetch('data/motion.json')
-.then((response) => {
-    return response.json();
-})
-.then((motion) => {
-    fetch('data/scene.json')
-    .then((response) => {
-        return response.json();
-    })
-    .then((scene) => {
-        // console.log(scene);
-        init(motion, scene);
-    })
-}).catch(function (error) {
-    console.log(error);
+// fetch('data/motion.json')
+// .then((response) => {
+//     return response.json();
+// })
+// .then((motion) => {
+//     fetch('data/scene.json')
+//     .then((response) => {
+//         return response.json();
+//     })
+//     .then((scene) => {
+//         // console.log(scene);
+//         init(motion, scene);
+//     })
+// }).catch(function (error) {
+//     console.log(error);
+// });
+
+const gyroPromise = fetch('data/motions/motion.json').then(function(response){ 
+    return response.json()
+});
+const pathPromise = fetch('data/paths/lavals.json').then(function(response){
+    return response.json()
+});
+
+Promise.all([gyroPromise, pathPromise]).then(function(values){
+    gyro = values[0];
+    path = values[1]['path'];
+
+    path_vectors = []
+    for (let i = 0; i < path.length; i++) {
+        const vec = new THREE.Vector3(-path[i][1], -path[i][0], 0);
+        path_vectors.push(vec);
+    }
+
+    init(gyro, path_vectors);
 });
 
 const ROLL_KEY = "Roll(rads)"
@@ -128,7 +148,7 @@ function setupCurve(scene, positions) {
     return curve;
 }
 
-function init(motion, sceneData) {
+function init(motion, path, sceneData) {
     const scene = setupScene(sceneData);
     
     const birdCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
@@ -145,14 +165,14 @@ function init(motion, sceneData) {
     const cameraHelper = new THREE.CameraHelper( camera );
     scene.add( cameraHelper );
     
-    const points  = [
-        new THREE.Vector3(0, 0.01, 30),
-        new THREE.Vector3(-1, 3, 25),
-        new THREE.Vector3(0, 5, 20),
-        new THREE.Vector3( 0, 0.5, 1),
-        new THREE.Vector3(-10, 0.3, -3)
-    ]
-    const curve = setupCurve(scene, points);
+    // const points  = [
+    //     new THREE.Vector3(0, 0.01, 30),
+    //     new THREE.Vector3(-1, 3, 25),
+    //     new THREE.Vector3(0, 5, 20),
+    //     new THREE.Vector3( 0, 0.5, 1),
+    //     new THREE.Vector3(-10, 0.3, -3)
+    // ]
+    const curve = setupCurve(scene, path);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
