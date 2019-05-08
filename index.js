@@ -10,11 +10,27 @@ fetch('data/motion.json')
     })
     .then((scene) => {
         // console.log(scene);
-        init(motion, scene);
+        fetch('data/forest_path_full.json')
+        .then((response) => {
+          return response.json();
+        })
+        .then((pointData) => {
+            init(motion, scene, pointData);
+        })
     })
 }).catch(function (error) {
     console.log(error);
 });
+
+// fetch('pathPoints.json')
+// .then((response) => {
+//     return response.json();
+// })
+// .then((pathPoints) => {
+//     getPoints(pathPoints);
+// }).catch(function (error) {
+//     console.log(error);
+// });
 
 const ROLL_KEY = "Roll(rads)"
 const PITCH_KEY = "Pitch(rads)"
@@ -35,8 +51,8 @@ function getValues(dict, k) {
 function setupScene(scene) {
     //Load scene from json
     var loader = new THREE.ObjectLoader();
-    loader.load('data/scene_shapes.json', function( shapes ) {
-        scene.add(shapes);
+    loader.load('data/forest/forest_ground.json', function( forest ) {
+        scene.add(forest);
     } );
 
     //const scene = new THREE.Scene(sceneData);
@@ -90,7 +106,7 @@ function setupScene(scene) {
 
     //return scene;
 }
- 
+
 function setupCurve(scene, positions) {
     var curve = new THREE.CatmullRomCurve3(positions);
 
@@ -104,15 +120,31 @@ function setupCurve(scene, positions) {
     return curve;
 }
 
-function init(motion, sceneData) {
+function getPoints(data) {
+  // let rawdata = fs.readFileSync('pathPoints.json');
+  // let data = JSON.parse(rawdata);
+  var indexPoints = data["object"]["children"].length - 1;
+  var pathPoints = data["object"]["children"][indexPoints];
+  var points = [];
+  for (let child of pathPoints["children"]) {
+    var mat = child["matrix"];
+    var pos = new THREE.Vector3(mat[12], mat[13], mat[14]);
+    points.push(pos);
+  }
+  //console.log(points);
+  return points;
+}
+
+function init(motion, sceneData, pointData) {
     const scene = new THREE.Scene();
     setupScene(scene);
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    const points  = [
-        new THREE.Vector3(0, 0.01, 30),
-        new THREE.Vector3(0, 5, 20),
-        new THREE.Vector3( 0, 0.5, 1)
-    ]
+    // const points  = [
+    //     new THREE.Vector3(0, 0.01, 30),
+    //     new THREE.Vector3(0, 5, 20),
+    //     new THREE.Vector3( 0, 0.5, 1)
+    // ]
+    const points = getPoints(pointData);
     const curve = setupCurve(scene, points);
 
     //Add ambient light
