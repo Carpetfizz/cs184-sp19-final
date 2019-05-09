@@ -1,28 +1,18 @@
-
-fetch('data/motion.json')
-.then((response) => {
-    return response.json();
-})
-.then((motion) => {
-    fetch('data/scene.json')
-    .then((response) => {
-        return response.json();
-    })
-    .then((scene) => {
-        // console.log(scene);
-        init(motion, scene);
-    })
-}).catch(function (error) {
-    console.log(error);
-});
-
 const ROLL_KEY = "Roll(rads)"
 const PITCH_KEY = "Pitch(rads)"
 const YAW_KEY = "Yaw(rads)"
 
-function reset(params) {
-    params.t = 0;
-    params.start = Date.now();
+const environments = {
+    'grass': {
+        'scene': 'data/scenes/grass.json',
+        'motion': 'data/motions/motion.json',
+        'path': 'data/paths/lavals.json'
+    },
+    'forest': {
+        'scene': 'data/scenes/forest.json',
+        'motion': 'data/motions/motion.json',
+        'path': 'data/paths/forest.json'
+    }
 }
 
 const Params = function() {
@@ -35,6 +25,9 @@ const Params = function() {
     this.reset = () => reset(this);
     this.isPlay = false;
     this.birdCam = true;
+    this.grass = () => start(environments['grass']);
+    this.forest = () => start(environments['forest']);
+    this.animationId = 0;
 }
 
 const gui = new dat.GUI();
@@ -48,7 +41,10 @@ gui.add(params, 'birdCam');
 damp_ctrl.onChange((v) => reset(params));
 dur_ctrl.onChange((v) => reset(params));
 
-
+var efolder = gui.addFolder('Environments');
+efolder.add(params, 'grass');
+efolder.add(params, 'forest');
+efolder.open();
 
 function lerp(v0, v1, t) {
     return (1 - t) * v0 + t * v1;
@@ -62,30 +58,68 @@ function getValues(dict, k) {
     return values;
 }
 
-function setupScene(sceneData) {
+function start(environment) {
+    cancelAnimationFrame(params.animationId);
+    const gyroPromise = fetch(environment.motion).then(function(response){ 
+        return response.json()
+    });
+    const pathPromise = fetch(environment.path).then(function(response){
+        return response.json()
+    });
+    
+    Promise.all([gyroPromise, pathPromise]).then(function(values){
+        gyro = values[0];
+        path = values[1]['path'];
+    
+        opencv_to_opengl = new THREE.Matrix3();
+        opencv_to_opengl.set(
+            1,  0,  0,
+            0, 1,  0,
+            0,  0, 1);
+    
+        path_vectors = []
+        for (let i = 0; i < path.length; i++) {
+            const vec = new THREE.Vector3(path[i][0], path[i][1], path[i][2]).applyMatrix3(opencv_to_opengl);
+            path_vectors.push(vec);
+        }
+    
+        init(gyro, path_vectors, environment.scene);
+    });
+}
+
+function reset(params) {
+    params.t = 0;
+    params.start = Date.now();
+}
+
+function setupScene(scenePath) {
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
+    const loader = new THREE.ObjectLoader();
+    loader.load(scenePath, function( sceneData ) {
+        scene.add(sceneData);
+    });
+    // scene.background = new THREE.Color(0x87ceeb);
     
-    // OBJECT
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material );
-    cube.position.y = 0.5;
-    scene.add(cube);
+    // // OBJECT
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+    // const cube = new THREE.Mesh(geometry, material );
+    // cube.position.y = 0.5;
+    // scene.add(cube);
     
-    // GROUND
-    const groundGeo = new THREE.PlaneGeometry(400,400);
-    const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
-    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.offset.set( 0, 0 );
-    groundTexture.repeat.set(20, 20);
-    const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
-    const ground = new THREE.Mesh(groundGeo,groundMat); 
-    ground.position.y = 0; //lower it 
-    ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
-    ground.doubleSided = true; 
-    scene.add(ground);
+    // // GROUND
+    // const groundGeo = new THREE.PlaneGeometry(400,400);
+    // const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
+    // groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    // groundTexture.offset.set( 0, 0 );
+    // groundTexture.repeat.set(20, 20);
+    // const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
+    // const ground = new THREE.Mesh(groundGeo,groundMat); 
+    // ground.position.y = 0; //lower it 
+    // ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
+    // ground.doubleSided = true; 
+    // scene.add(ground);
 
     // SKYBOX
     // const skyGeo = new THREE.CubeGeometry(1000, 1000, 1000, 1, 1, 1, null, true);
@@ -109,8 +143,11 @@ function setupScene(sceneData) {
     
     // LIGHTING
 
-    var light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
-    scene.add( light );
+    // const light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
+    // scene.add( light );
+
+    // const axesHelper = new THREE.AxesHelper( 5 );
+    // scene.add( axesHelper );
 
     return scene;
 }
@@ -128,12 +165,19 @@ function setupCurve(scene, positions) {
     return curve;
 }
 
-function init(motion, sceneData) {
-    const scene = setupScene(sceneData);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+function init(motion, path, scenePath) {
+    const scene = setupScene(scenePath);
     
     const birdCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
     birdCam.position.set(-10, 10, 1);
     birdCam.lookAt(new THREE.Vector3(0, 0, 0));
+
+    const controls = new THREE.OrbitControls( birdCam , renderer.domElement);
+    controls.update();
     
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     const camBallGeo = new THREE.SphereGeometry(0.3, 30, 30);
@@ -145,28 +189,21 @@ function init(motion, sceneData) {
     const cameraHelper = new THREE.CameraHelper( camera );
     scene.add( cameraHelper );
     
-    const points  = [
-        new THREE.Vector3(0, 0.01, 30),
-        new THREE.Vector3(-1, 3, 25),
-        new THREE.Vector3(0, 5, 20),
-        new THREE.Vector3( 0, 0.5, 1),
-        new THREE.Vector3(-10, 0.3, -3)
-    ]
-    const curve = setupCurve(scene, points);
-
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
+    // const points  = [
+    //     new THREE.Vector3(0, 0.01, 30),
+    //     new THREE.Vector3(-1, 3, 25),
+    //     new THREE.Vector3(0, 5, 20),
+    //     new THREE.Vector3( 0, 0.5, 1),
+    //     new THREE.Vector3(-10, 0.3, -3)
+    // ]
+    const curve = setupCurve(scene, path);
 
     rolls = getValues(motion, ROLL_KEY);
     pitches = getValues(motion, PITCH_KEY);
     yaws = getValues(motion, YAW_KEY);
 
-    const controls = new THREE.OrbitControls( birdCam , renderer.domElement);
-    controls.update();
-
     function animate() {
-        requestAnimationFrame( animate );
+        params.animationId = requestAnimationFrame( animate );
         controls.update();
         let roll, pitch, yaw;
         let duration =  params.duration * 1000; // ms
@@ -213,3 +250,5 @@ function init(motion, sceneData) {
     }
     animate();
 }
+
+start(environments['forest']);
