@@ -14,16 +14,11 @@ if __name__ == '__main__':
 
     with open(args.il, 'r') as f:
         d = json.load(f)
-        spheres = d['object']['children'][-1]['children']
+        spheres = d['object']['children'][0]['children']
         for sphere in spheres:
             mtx = sphere['matrix']
             point = [mtx[12], mtx[13], mtx[14]]
             path.append(point)
-
-    
-    x = np.array(path)
-    plt.plot(x[:,0], x[:,1])
-    plt.show()
 
     j = {'path': path}
 
