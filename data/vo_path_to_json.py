@@ -1,6 +1,7 @@
 import pickle
 import json
 import argparse
+import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -11,8 +12,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     v = pickle.load(open(args.il, 'rb'))
+
+    l = []
+
+    for i in range(np.size(v, 0)):
+        point = v[i, :]
+        l.append([point[0], 0, point[1]])
+
     d = {}
-    d[args.key] = v.tolist()
+    d[args.key] = l
 
     with open(args.out,'w') as fp:
     	json.dump(d, fp)

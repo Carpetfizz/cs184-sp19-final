@@ -12,6 +12,11 @@ const environments = {
         'scene': 'data/scenes/forest.json',
         'motion': 'data/motions/motion.json',
         'path': 'data/paths/forest.json'
+    },
+    'lavals': {
+        'scene': 'data/scenes/shapes.json',
+        'motion': 'data/motions/motion.json',
+        'path': 'data/paths/lavals.json'
     }
 }
 
@@ -27,6 +32,7 @@ const Params = function() {
     this.birdCam = true;
     this.shapes = () => start(environments['shapes']);
     this.forest = () => start(environments['forest']);
+    this.lavals = () => start(environments['lavals']);
     this.animationId = 0;
 }
 
@@ -44,6 +50,7 @@ dur_ctrl.onChange((v) => reset(params));
 let efolder = gui.addFolder('Environments');
 efolder.add(params, 'shapes');
 efolder.add(params, 'forest');
+efolder.add(params, 'lavals');
 efolder.open();
 
 function lerp(v0, v1, t) {
@@ -148,6 +155,9 @@ function setupScene(scenePath) {
 
     // const axesHelper = new THREE.AxesHelper( 5 );
     // scene.add( axesHelper );
+
+    var axesHelper = new THREE.AxesHelper( 5 );
+    scene.add( axesHelper );
 
     return scene;
 }
