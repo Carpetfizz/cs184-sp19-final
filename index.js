@@ -1,7 +1,3 @@
-const ROLL_KEY = "Roll(rads)"
-const PITCH_KEY = "Pitch(rads)"
-const YAW_KEY = "Yaw(rads)"
-
 const environments = {
     'shapes': {
         'scene': 'data/scenes/shapes.json',
@@ -15,7 +11,7 @@ const environments = {
     },
     'lavals': {
         'scene': 'data/scenes/shapes.json',
-        'motion': 'data/motions/motion.json',
+        'motion': 'data/motions/lavals.json',
         'path': 'data/paths/lavals.json'
     }
 }
@@ -57,10 +53,10 @@ function lerp(v0, v1, t) {
     return (1 - t) * v0 + t * v1;
 }
 
-function getValues(dict, k) {
+function getColumn(mtx, j) {
     values = []
-    for (let i = 0; i < Object.keys(dict['Timestamp']).length; i++) {
-        values.push(dict[k][String(i)])
+    for (let i = 0; i < mtx.length; i++) {
+        values.push(mtx[i][j]);
     }
     return values;
 }
@@ -199,18 +195,11 @@ function init(motion, path, scenePath) {
     const cameraHelper = new THREE.CameraHelper( camera );
     scene.add( cameraHelper );
     
-    // const points  = [
-    //     new THREE.Vector3(0, 0.01, 30),
-    //     new THREE.Vector3(-1, 3, 25),
-    //     new THREE.Vector3(0, 5, 20),
-    //     new THREE.Vector3( 0, 0.5, 1),
-    //     new THREE.Vector3(-10, 0.3, -3)
-    // ]
     const curve = setupCurve(scene, path);
 
-    rolls = getValues(motion, ROLL_KEY);
-    pitches = getValues(motion, PITCH_KEY);
-    yaws = getValues(motion, YAW_KEY);
+    rolls = getColumn(motion['rotations'], 0);
+    pitches = getColumn(motion['rotations'], 1);
+    yaws = getColumn(motion['rotations'], 2);
 
     function animate() {
         params.animationId = requestAnimationFrame( animate );
