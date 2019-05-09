@@ -19,7 +19,7 @@
 const gyroPromise = fetch('data/motions/motion.json').then(function(response){ 
     return response.json()
 });
-const pathPromise = fetch('data/paths/lavals.json').then(function(response){
+const pathPromise = fetch('data/paths/forest_path.json').then(function(response){
     return response.json()
 });
 
@@ -27,9 +27,15 @@ Promise.all([gyroPromise, pathPromise]).then(function(values){
     gyro = values[0];
     path = values[1]['path'];
 
+    opencv_to_opengl = new THREE.Matrix3();
+    opencv_to_opengl.set(
+        1,  0,  0,
+        0, 1,  0,
+        0,  0, 1);
+
     path_vectors = []
     for (let i = 0; i < path.length; i++) {
-        const vec = new THREE.Vector3(-path[i][1], -path[i][0], 0);
+        const vec = new THREE.Vector3(path[i][0], path[i][1], path[i][2]).applyMatrix3(opencv_to_opengl);
         path_vectors.push(vec);
     }
 
@@ -68,8 +74,6 @@ gui.add(params, 'birdCam');
 damp_ctrl.onChange((v) => reset(params));
 dur_ctrl.onChange((v) => reset(params));
 
-
-
 function lerp(v0, v1, t) {
     return (1 - t) * v0 + t * v1;
 }
@@ -85,27 +89,32 @@ function getValues(dict, k) {
 function setupScene(sceneData) {
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
+    const loader = new THREE.ObjectLoader();
+    loader.load('data/scenes/forest_path_full.json', function( forest ) {
+
+        scene.add(forest);
+    });
+    // scene.background = new THREE.Color(0x87ceeb);
     
-    // OBJECT
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material );
-    cube.position.y = 0.5;
-    scene.add(cube);
+    // // OBJECT
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+    // const cube = new THREE.Mesh(geometry, material );
+    // cube.position.y = 0.5;
+    // scene.add(cube);
     
-    // GROUND
-    const groundGeo = new THREE.PlaneGeometry(400,400);
-    const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
-    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.offset.set( 0, 0 );
-    groundTexture.repeat.set(20, 20);
-    const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
-    const ground = new THREE.Mesh(groundGeo,groundMat); 
-    ground.position.y = 0; //lower it 
-    ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
-    ground.doubleSided = true; 
-    scene.add(ground);
+    // // GROUND
+    // const groundGeo = new THREE.PlaneGeometry(400,400);
+    // const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
+    // groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    // groundTexture.offset.set( 0, 0 );
+    // groundTexture.repeat.set(20, 20);
+    // const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
+    // const ground = new THREE.Mesh(groundGeo,groundMat); 
+    // ground.position.y = 0; //lower it 
+    // ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
+    // ground.doubleSided = true; 
+    // scene.add(ground);
 
     // SKYBOX
     // const skyGeo = new THREE.CubeGeometry(1000, 1000, 1000, 1, 1, 1, null, true);
@@ -129,8 +138,11 @@ function setupScene(sceneData) {
     
     // LIGHTING
 
-    var light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
-    scene.add( light );
+    // const light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
+    // scene.add( light );
+
+    // const axesHelper = new THREE.AxesHelper( 5 );
+    // scene.add( axesHelper );
 
     return scene;
 }
