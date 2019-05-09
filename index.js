@@ -9,16 +9,20 @@ const environments = {
         'motion': 'data/motions/motion.json',
         'path': 'data/paths/forest.json'
     },
-    'lavals': {
+    'lavals_unfiltered': {
         'scene': 'data/scenes/shapes.json',
-        'motion': 'data/motions/lavals.json',
-        'path': 'data/paths/lavals.json'
+        'motion': 'data/motions/lavals_unfiltered.json',
+        'path': 'data/paths/lavals_unfiltered.json'
+    },
+    'lavals_filtered': {
+        'scene': 'data/scenes/shapes.json',
+        'motion': 'data/motions/lavals_filtered.json',
+        'path': 'data/paths/lavals_filtered.json'
     }
 }
 
 const Params = function() {
     // THIS CHANGES THE ANGLE OF ROTATION... 
-    this.dampening = 0.1;
     this.duration = 3;
     this.isPlay = true;
     this.t = 0;
@@ -28,25 +32,25 @@ const Params = function() {
     this.birdCam = true;
     this.shapes = () => start(environments['shapes']);
     this.forest = () => start(environments['forest']);
-    this.lavals = () => start(environments['lavals']);
+    this.lavals_unfiltered = () => start(environments['lavals_unfiltered']);
+    this.lavals_filtered = () => start(environments['lavals_filtered']);
     this.animationId = 0;
 }
 
 const gui = new dat.GUI();
 const params = new Params();
 
-const damp_ctrl = gui.add(params, 'dampening', 0, 1);
 const dur_ctrl = gui.add(params, 'duration');
 gui.add(params, 'reset');
 gui.add(params, 'birdCam');
 
-damp_ctrl.onChange((v) => reset(params));
 dur_ctrl.onChange((v) => reset(params));
 
 let efolder = gui.addFolder('Environments');
 efolder.add(params, 'shapes');
 efolder.add(params, 'forest');
-efolder.add(params, 'lavals');
+efolder.add(params, 'lavals_unfiltered');
+efolder.add(params, 'lavals_filtered');
 efolder.open();
 
 function lerp(v0, v1, t) {
@@ -152,8 +156,8 @@ function setupScene(scenePath) {
     // const axesHelper = new THREE.AxesHelper( 5 );
     // scene.add( axesHelper );
 
-    var axesHelper = new THREE.AxesHelper( 5 );
-    scene.add( axesHelper );
+    // var axesHelper = new THREE.AxesHelper( 5 );
+    // scene.add( axesHelper );
 
     return scene;
 }
@@ -229,9 +233,9 @@ function init(motion, path, scenePath) {
             }
 
             if (params.t < rolls.length) {
-                camera.rotation.x += pitch * params.dampening;
-                camera.rotation.y += roll * params.dampening;
-                camera.rotation.z += yaw * params.dampening;
+                camera.rotation.x += pitch;
+                camera.rotation.y += roll;
+                camera.rotation.z += yaw;
             } else {
                 params.t = 0;
             }

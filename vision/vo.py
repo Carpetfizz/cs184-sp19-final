@@ -80,7 +80,7 @@ def vo(source, scale_factor = 0.25):
     scale_factor = 0.25
 
     NUM_FRAMES = count_frames(source)
-    LIMIT = 300
+    LIMIT = NUM_FRAMES
 
     translations = []
     rotations = []
@@ -149,6 +149,8 @@ if __name__ == '__main__':
     print(path_raw.shape)
     
     angles_filtered, path_filtered = VO_Filter(angles, path_raw)
+    # angles_filtered = angles
+    # path_filtered = path_raw
 
     l = []
     for i in range(np.size(path_filtered, 0)):
