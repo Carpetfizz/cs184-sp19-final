@@ -3,10 +3,10 @@ const PITCH_KEY = "Pitch(rads)"
 const YAW_KEY = "Yaw(rads)"
 
 const environments = {
-    'grass': {
-        'scene': 'data/scenes/grass.json',
+    'shapes': {
+        'scene': 'data/scenes/shapes.json',
         'motion': 'data/motions/motion.json',
-        'path': 'data/paths/lavals.json'
+        'path': 'data/paths/shapes.json'
     },
     'forest': {
         'scene': 'data/scenes/forest.json',
@@ -25,7 +25,7 @@ const Params = function() {
     this.reset = () => reset(this);
     this.isPlay = false;
     this.birdCam = true;
-    this.grass = () => start(environments['grass']);
+    this.shapes = () => start(environments['shapes']);
     this.forest = () => start(environments['forest']);
     this.animationId = 0;
 }
@@ -41,8 +41,8 @@ gui.add(params, 'birdCam');
 damp_ctrl.onChange((v) => reset(params));
 dur_ctrl.onChange((v) => reset(params));
 
-var efolder = gui.addFolder('Environments');
-efolder.add(params, 'grass');
+let efolder = gui.addFolder('Environments');
+efolder.add(params, 'shapes');
 efolder.add(params, 'forest');
 efolder.open();
 
