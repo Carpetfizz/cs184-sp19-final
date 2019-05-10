@@ -10,12 +10,12 @@ const environments = {
         'path': 'data/paths/forest.json'
     },
     'lavals_unfiltered': {
-        'scene': 'data/scenes/pool1.json',
+        'scene': 'data/scenes/lavals_final.json',
         'motion': 'data/motions/lavals_unfiltered.json',
         'path': 'data/paths/lavals_unfiltered.json'
     },
     'lavals_filtered': {
-        'scene': 'data/scenes/pool1.json',
+        'scene': 'data/scenes/lavals_final.json',
         'motion': 'data/motions/lavals_filtered.json',
         'path': 'data/paths/lavals_averaged.json'
     }
@@ -23,15 +23,15 @@ const environments = {
 
 const Params = function() {
     // THIS CHANGES THE ANGLE OF ROTATION...
-    this.duration = 3;
+    this.duration = 20;
     this.isPlay = true;
     this.t = 0;
     this.start = Date.now();
     this.reset = () => reset(this);
     this.isPlay = false;
     this.birdCam = true;
-    this.shapes = () => start(environments['shapes']);
-    this.forest = () => start(environments['forest']);
+    // this.shapes = () => start(environments['shapes']);
+    // this.forest = () => start(environments['forest']);
     this.lavals_unfiltered = () => start(environments['lavals_unfiltered']);
     this.lavals_filtered = () => start(environments['lavals_filtered']);
     this.animationId = 0;
@@ -47,8 +47,8 @@ gui.add(params, 'birdCam');
 dur_ctrl.onChange((v) => reset(params));
 
 let efolder = gui.addFolder('Environments');
-efolder.add(params, 'shapes');
-efolder.add(params, 'forest');
+// efolder.add(params, 'shapes');
+// efolder.add(params, 'forest');
 efolder.add(params, 'lavals_unfiltered');
 efolder.add(params, 'lavals_filtered');
 efolder.open();
@@ -93,7 +93,7 @@ function start(environment) {
         const scaleZ = 1;
         path_vectors = []
         for (let i = 0; i < path.length; i++) {
-            const vec = new THREE.Vector3(path[i][0] * scaleX, 1, path[i][2] * scaleZ).applyMatrix3(opencv_to_opengl);
+            const vec = new THREE.Vector3(path[i][0] * scaleX, 3, path[i][2] * scaleZ).applyMatrix3(opencv_to_opengl);
             path_vectors.push(vec);
         }
 
@@ -163,8 +163,8 @@ function setupScene(scenePath) {
     // const axesHelper = new THREE.AxesHelper( 5 );
     // scene.add( axesHelper );
 
-    var axesHelper = new THREE.AxesHelper( 5 );
-    scene.add( axesHelper );
+    // var axesHelper = new THREE.AxesHelper( 5 );
+    // scene.add( axesHelper );
 
     return scene;
 }
@@ -261,4 +261,4 @@ function init(motion, path, scenePath) {
     animate();
 }
 
-start(environments['forest']);
+start(environments['lavals_filtered']);

@@ -88,7 +88,7 @@ def simpleFilter3(sig3, threshold):
     ret[:, 2] = simpleFilter(sig3[:, 2], threshold[2])
     return ret
 
-def rotFilter3(sig3, threshold=45, bandwidth=50, damp=[1, 1, 1]):
+def rotFilter3(sig3, threshold=45, bandwidth=70, damp=[1, 1, 1]):
     ret = np.zeros(sig3.shape)
     ret[:, 0] = lowpassFilter(simpleFilter(sig3[:, 0], threshold), bw=bandwidth) / damp[0]
     ret[:, 1] = lowpassFilter(simpleFilter(sig3[:, 1], threshold), bw=bandwidth) / damp[1]
