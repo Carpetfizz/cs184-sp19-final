@@ -17,7 +17,7 @@ const environments = {
     'lavals_filtered': {
         'scene': 'data/scenes/pool1.json',
         'motion': 'data/motions/lavals_filtered.json',
-        'path': 'data/paths/lavals_filtered.json'
+        'path': 'data/paths/lavals_averaged.json'
     }
 }
 
@@ -240,9 +240,9 @@ function init(motion, path, scenePath) {
             }
 
             if (params.t < rolls.length) {
-                // camera.rotation.x += pitch;
-                // camera.rotation.y += roll;
-                // camera.rotation.z += yaw;
+                camera.rotation.x += pitch;
+                camera.rotation.y += roll;
+                camera.rotation.z += yaw;
             } else {
                 params.t = 0;
             }
