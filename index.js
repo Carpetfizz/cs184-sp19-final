@@ -10,19 +10,19 @@ const environments = {
         'path': 'data/paths/forest.json'
     },
     'lavals_unfiltered': {
-        'scene': 'data/scenes/shapes.json',
+        'scene': 'data/scenes/pool1.json',
         'motion': 'data/motions/lavals_unfiltered.json',
         'path': 'data/paths/lavals_unfiltered.json'
     },
     'lavals_filtered': {
-        'scene': 'data/scenes/shapes.json',
+        'scene': 'data/scenes/pool1.json',
         'motion': 'data/motions/lavals_filtered.json',
         'path': 'data/paths/lavals_filtered.json'
     }
 }
 
 const Params = function() {
-    // THIS CHANGES THE ANGLE OF ROTATION... 
+    // THIS CHANGES THE ANGLE OF ROTATION...
     this.duration = 3;
     this.isPlay = true;
     this.t = 0;
@@ -67,29 +67,36 @@ function getColumn(mtx, j) {
 
 function start(environment) {
     cancelAnimationFrame(params.animationId);
-    const gyroPromise = fetch(environment.motion).then(function(response){ 
+    const gyroPromise = fetch(environment.motion).then(function(response){
         return response.json()
     });
     const pathPromise = fetch(environment.path).then(function(response){
         return response.json()
     });
-    
+
     Promise.all([gyroPromise, pathPromise]).then(function(values){
         gyro = values[0];
         path = values[1]['path'];
-    
+
         opencv_to_opengl = new THREE.Matrix3();
         opencv_to_opengl.set(
             1,  0,  0,
             0, 1,  0,
             0,  0, 1);
-    
+
+        // const scaleX = 1;
+        // const scaleY = 1;
+        // const scaleZ = 1;
+
+        const scaleX = 0.4;
+        const scaleY = 1;
+        const scaleZ = 1;
         path_vectors = []
         for (let i = 0; i < path.length; i++) {
-            const vec = new THREE.Vector3(path[i][0], path[i][1], path[i][2]).applyMatrix3(opencv_to_opengl);
+            const vec = new THREE.Vector3(path[i][0] * scaleX, 1, path[i][2] * scaleZ).applyMatrix3(opencv_to_opengl);
             path_vectors.push(vec);
         }
-    
+
         init(gyro, path_vectors, environment.scene);
     });
 }
@@ -107,25 +114,25 @@ function setupScene(scenePath) {
         scene.add(sceneData);
     });
     // scene.background = new THREE.Color(0x87ceeb);
-    
+
     // // OBJECT
     // const geometry = new THREE.BoxGeometry(1, 1, 1);
     // const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
     // const cube = new THREE.Mesh(geometry, material );
     // cube.position.y = 0.5;
     // scene.add(cube);
-    
-    // // GROUND
+
+    // GROUND
     // const groundGeo = new THREE.PlaneGeometry(400,400);
     // const groundTexture = new THREE.TextureLoader().load('textures/grass.jpg');
     // groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
     // groundTexture.offset.set( 0, 0 );
-    // groundTexture.repeat.set(20, 20);
+    // groundTexture.repeat.set(400, 400);
     // const groundMat = new THREE.MeshBasicMaterial({map: groundTexture});
-    // const ground = new THREE.Mesh(groundGeo,groundMat); 
-    // ground.position.y = 0; //lower it 
-    // ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis 
-    // ground.doubleSided = true; 
+    // const ground = new THREE.Mesh(groundGeo,groundMat);
+    // ground.position.y = -0.1; //lower it
+    // ground.rotation.x = -Math.PI/2; //-90 degrees around the xaxis
+    // ground.doubleSided = true;
     // scene.add(ground);
 
     // SKYBOX
@@ -138,7 +145,7 @@ function setupScene(scenePath) {
     //     'skybox/hills_bk.png',
     //     'skybox/hills_ft.png'
     // ]
-	
+
 	// var skyMats = [];
 	// for (var i = 0; i < 6; i++)
 	// 	skyMats.push( new THREE.MeshBasicMaterial({
@@ -147,7 +154,7 @@ function setupScene(scenePath) {
 	// 	}));
 	// var skybox = new THREE.Mesh(skyGeo, skyMats);
     // scene.add( skybox );
-    
+
     // LIGHTING
 
     // const light = new THREE.HemisphereLight( 0x87ceeb, 0x008000, 1 );
@@ -156,8 +163,8 @@ function setupScene(scenePath) {
     // const axesHelper = new THREE.AxesHelper( 5 );
     // scene.add( axesHelper );
 
-    // var axesHelper = new THREE.AxesHelper( 5 );
-    // scene.add( axesHelper );
+    var axesHelper = new THREE.AxesHelper( 5 );
+    scene.add( axesHelper );
 
     return scene;
 }
@@ -168,7 +175,7 @@ function setupCurve(scene, positions) {
     const points = curve.getPoints( 50 );
     const curveGeo = new THREE.BufferGeometry().setFromPoints( points );
     const curveMat = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-    
+
     // Create the final object to add to the scene
     const curveObject = new THREE.Line( curveGeo, curveMat );
     scene.add(curveObject);
@@ -181,14 +188,14 @@ document.body.appendChild( renderer.domElement );
 
 function init(motion, path, scenePath) {
     const scene = setupScene(scenePath);
-    
+
     const birdCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
     birdCam.position.set(-10, 10, 1);
     birdCam.lookAt(new THREE.Vector3(0, 0, 0));
 
     const controls = new THREE.OrbitControls( birdCam , renderer.domElement);
     controls.update();
-    
+
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     const camBallGeo = new THREE.SphereGeometry(0.3, 30, 30);
     const camBallMat = new THREE.MeshBasicMaterial({color: 0xffff00});
@@ -198,7 +205,7 @@ function init(motion, path, scenePath) {
 
     const cameraHelper = new THREE.CameraHelper( camera );
     scene.add( cameraHelper );
-    
+
     const curve = setupCurve(scene, path);
 
     rolls = getColumn(motion['rotations'], 0);
@@ -233,9 +240,9 @@ function init(motion, path, scenePath) {
             }
 
             if (params.t < rolls.length) {
-                camera.rotation.x += pitch;
-                camera.rotation.y += roll;
-                camera.rotation.z += yaw;
+                // camera.rotation.x += pitch;
+                // camera.rotation.y += roll;
+                // camera.rotation.z += yaw;
             } else {
                 params.t = 0;
             }
