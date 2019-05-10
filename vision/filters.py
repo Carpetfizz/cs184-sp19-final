@@ -88,8 +88,15 @@ def simpleFilter3(sig3, threshold):
     ret[:, 2] = simpleFilter(sig3[:, 2], threshold[2])
     return ret
 
+def rotFilter3(sig3, threshold=45, bandwidth=50, damp=[1, 1, 1]):
+    ret = np.zeros(sig3.shape)
+    ret[:, 0] = lowpassFilter(simpleFilter(sig3[:, 0], threshold), bw=bandwidth) / damp[0]
+    ret[:, 1] = lowpassFilter(simpleFilter(sig3[:, 1], threshold), bw=bandwidth) / damp[1]
+    ret[:, 2] = lowpassFilter(simpleFilter(sig3[:, 2], threshold), bw=bandwidth) / damp[2]
+    return ret
+
 def smoothenSimpleFilter3(sig3, threshold=[20, 20, 20], window=[51, 51, 51], deg=[2, 2, 2]):
     return smoothenSavGol(simpleFilter3(sig3, threshold), window, deg)
 
 def VO_Filter(pathArr, rotArr):
-    return (smoothenSavGol(pathArr), smoothenSimpleFilter3(rotArr))
+    return (smoothenSavGol(pathArr), rotFilter3(rotArr))

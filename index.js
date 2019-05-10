@@ -240,9 +240,9 @@ function init(motion, path, scenePath) {
             }
 
             if (params.t < rolls.length) {
-                camera.rotation.x += pitch;
-                camera.rotation.y += roll;
-                camera.rotation.z += yaw;
+                camera.rotation.x += pitch * Math.PI / 180;
+                camera.rotation.y += roll * Math.PI / 180;
+                camera.rotation.z += yaw * Math.PI / 180;
             } else {
                 params.t = 0;
             }
